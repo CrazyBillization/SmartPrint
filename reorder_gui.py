@@ -10,7 +10,7 @@ After cutting the stack into four piles, each pile is already sequential.
 
 import os
 import sys
-from typing import List
+from typing import List, Tuple
 
 from pypdf import PdfReader, PdfWriter
 from PySide6 import QtCore, QtWidgets
@@ -32,7 +32,7 @@ def slice_page_into_quarters(page) -> List:
     return parts
 
 
-def reorder_stride(parts: List):
+def reorder_stride(parts: List) -> Tuple[List, int]:
     total_parts = len(parts)
     if total_parts % 4 != 0:
         raise ValueError("Total invoices must be divisible by 4.")
@@ -95,6 +95,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Invoice PDF Reorder")
+        self.resize(500, 200)
         self.worker = None
         self._init_ui()
 
@@ -167,6 +168,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.worker.failed.connect(lambda _: self._set_running(False))
         self.worker.start()
 
+    def closeEvent(self, event):  # noqa: N802
+        if self.worker and self.worker.isRunning():
+            self.worker.quit()
+            self.worker.wait(2000)
+        super().closeEvent(event)
+
     def _validate_paths(self, src: str, dst: str):
         if not src or not dst:
             raise ValueError("Please select both source and output paths.")
@@ -203,7 +210,6 @@ class MainWindow(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
-    window.resize(640, 180)
     window.show()
     sys.exit(app.exec())
 
