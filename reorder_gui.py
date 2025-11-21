@@ -8,6 +8,7 @@ Output order per page i (1-based): i, i+N, i+2N, i+3N where N = original page co
 After cutting the stack into four piles, each pile is already sequential.
 """
 
+import copy
 import os
 import sys
 from typing import List, Tuple
@@ -60,7 +61,9 @@ def slice_page_into_quarters(page) -> List:
     step = h / 4.0
     parts = []
     for i in range(4):  # 0 = top
-        part = page.copy()
+        # Use deepcopy so the cloned page remains a PageObject with helper methods
+        # such as get_contents, instead of degrading into a plain dict via dict.copy().
+        part = copy.deepcopy(page)
         top = h - step * i
         bottom = top - step
         part_box = _get_media_box(part)
