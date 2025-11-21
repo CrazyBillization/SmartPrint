@@ -16,18 +16,55 @@ from pypdf import PdfReader, PdfWriter
 from PySide6 import QtCore, QtWidgets
 
 
+def _get_media_box(page):
+    """Return a MediaBox-like object across pypdf/PyPDF2 versions."""
+
+    if hasattr(page, "mediabox"):
+        return page.mediabox
+    if hasattr(page, "mediaBox"):
+        return page.mediaBox
+    if "/MediaBox" in getattr(page, "keys", lambda: [])():
+        return page["/MediaBox"]
+    raise AttributeError("PDF page is missing a MediaBox definition.")
+
+
+def _get_dimensions(media_box) -> Tuple[float, float]:
+    """Return width/height as floats, handling rectangle-like sequences."""
+
+    try:
+        return float(media_box.width), float(media_box.height)
+    except Exception:
+        try:
+            return float(media_box[2] - media_box[0]), float(media_box[3] - media_box[1])
+        except Exception as exc:  # noqa: BLE001
+            raise ValueError("Unsupported MediaBox structure on PDF page.") from exc
+
+
+def _set_box_edges(media_box, lower_left, upper_right):
+    """Set crop box corners across MediaBox variations."""
+
+    if hasattr(media_box, "lower_left"):
+        media_box.lower_left = lower_left
+        media_box.upper_right = upper_right
+    elif hasattr(media_box, "lowerLeft"):
+        media_box.lowerLeft = lower_left
+        media_box.upperRight = upper_right
+    else:
+        media_box[0:4] = (*lower_left, *upper_right)
+
+
 def slice_page_into_quarters(page) -> List:
     """Return 4 cropped copies from top to bottom."""
-    w = float(page.mediabox.width)
-    h = float(page.mediabox.height)
+    media_box = _get_media_box(page)
+    w, h = _get_dimensions(media_box)
     step = h / 4.0
     parts = []
     for i in range(4):  # 0 = top
         part = page.copy()
         top = h - step * i
         bottom = top - step
-        part.mediabox.lower_left = (0, bottom)
-        part.mediabox.upper_right = (w, top)
+        part_box = _get_media_box(part)
+        _set_box_edges(part_box, (0, bottom), (w, top))
         parts.append(part)
     return parts
 
@@ -46,8 +83,8 @@ def reorder_stride(parts: List) -> Tuple[List, int]:
 
 
 def rebuild_pages(parts: List, num_pages: int, template_page) -> PdfWriter:
-    w = float(template_page.mediabox.width)
-    h = float(template_page.mediabox.height)
+    media_box = _get_media_box(template_page)
+    w, h = _get_dimensions(media_box)
     step = h / 4.0
     writer = PdfWriter()
     for i in range(num_pages):
