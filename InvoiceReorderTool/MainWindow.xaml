@@ -1,0 +1,36 @@
+<Window x:Class="InvoiceReorderTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="發票 PDF 重新排序工具" Height="400" Width="650">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0 0 0 10">
+            <TextBlock Text="請選擇一個 PDF 檔案" FontSize="16" FontWeight="Bold" />
+            <Button x:Name="SelectFileButton" Content="選擇原始 PDF 檔案" Width="200" Height="30" Margin="0 10 0 0" Click="OnSelectFileClicked" />
+            <TextBlock x:Name="FilePathText" Text="尚未選擇檔案" Margin="0 8 0 0" TextWrapping="Wrap" />
+            <TextBlock x:Name="PageInfoText" Text="頁數資訊將顯示於此" Margin="0 4 0 0" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0 10 0 0">
+            <Button x:Name="StartButton" Content="開始重新排版" Width="160" Height="35" Click="OnStartClicked" IsEnabled="False" />
+            <TextBlock Text="若頁數較多，處理時間可能較長" Margin="10 10 0 0" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0 20 0 0">
+            <TextBlock Text="處理進度" FontWeight="Bold" />
+            <ProgressBar x:Name="Progress" Height="20" Minimum="0" Maximum="100" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="3" x:Name="StatusText" Text="狀態：尚未開始" Margin="0 10 0 0" />
+
+        <TextBlock Grid.Row="4" TextWrapping="Wrap" Foreground="Gray" Margin="0 20 0 0">
+            本工具會依照規則將原始 PDF 重新排列：新檔案第 page 頁的第 pos 區塊對應發票編號 invoiceNumber = page + (pos - 1) * P，再依公式反推來源頁面與位置。
+        </TextBlock>
+    </Grid>
+</Window>
